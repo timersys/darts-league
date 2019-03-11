@@ -109,6 +109,7 @@ class DartsL {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-dartsl-i18n.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/global/class-dartsl-cpt.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/global/class-dartsl-fecha-cpt.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/admin/class-dartsl-challonge.php';
 	}
 
 	/**

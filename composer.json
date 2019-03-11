@@ -1,0 +1,5 @@
+{
+    "require": {
+        "imbue/challonge-php": "@dev"
+    }
+}

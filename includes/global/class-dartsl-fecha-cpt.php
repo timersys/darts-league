@@ -163,8 +163,8 @@ class DartsL_Fecha_Cpt {
 
 		add_meta_box(
 			'dartsl-participantes',
-			__( 'Participantes', 'dartsl' ),
-			[ $this, 'dartsl_participantes' ],
+			__( 'Opciones', 'dartsl' ),
+			[ $this, 'dartsl_opciones' ],
 			'dartsl_fecha_cpt',
 			'normal',
 			'core'
@@ -190,20 +190,21 @@ class DartsL_Fecha_Cpt {
 	 *
 	 * @since 1.0.0
 	 */
-	public function dartsl_participantes( $post, $metabox ) {
+	public function dartsl_opciones( $post, $metabox ) {
 
 		$data = get_post_meta($post->ID, 'dartls');
+		$torneo = get_post_meta($post->ID, 'dartls_torneo');
 		$data = wp_parse_args( $data,
 			[
 				'participantes' => []
 			]
 		);
-		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/participantes.php';
+		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/opciones-fecha.php';
 	}
 
 	public function dartsl_resultados( $post, $metabox ) {
 
-		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/resultados.php';
+		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/resultados-fecha.php';
 	}
 
 
