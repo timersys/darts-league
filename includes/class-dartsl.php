@@ -106,10 +106,11 @@ class DartsL {
 	 */
 	private function load_dependencies() {
 
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-dartsl-i18n.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/global/class-dartsl-cpt.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/global/class-dartsl-fecha-cpt.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/admin/class-dartsl-challonge.php';
+		require_once DARTSL_PLUGIN_DIR . 'includes/class-dartsl-i18n.php';
+		require_once DARTSL_PLUGIN_DIR . 'includes/global/class-dartsl-cpt.php';
+		require_once DARTSL_PLUGIN_DIR . 'includes/global/class-dartsl-fecha-cpt.php';
+		require_once DARTSL_PLUGIN_DIR . 'includes/admin/class-dartsl-challonge.php';
+		require_once DARTSL_PLUGIN_DIR . 'includes/admin/class-dartsl-admin.php';
 	}
 
 	/**

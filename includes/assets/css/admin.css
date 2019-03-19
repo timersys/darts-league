@@ -1,0 +1,64 @@
+table#partidos input {
+    width: 50px;
+    text-align: center;
+}
+input.player_score{
+    font-size: 4em;
+    color: #000;
+}
+td.left_match{
+    text-align: right;
+}
+td.left_match div,
+td.right_match div{
+    margin-bottom: 5px;
+}
+.match_name {
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+.match_avg input,
+.match_co input{
+    font-size: 12px;
+    padding: 0;
+}
+.geot-admin-tabs {
+    background-color: #fff;
+    margin: 0 0 20px 0;
+    padding: 0 20px;
+    list-style: none;
+    overflow: auto;
+    font-size: 14px;
+}
+
+.geot-admin-tabs li {
+    margin: 0 30px 0 0;
+    padding: 0;
+    float: left;
+}
+
+.geot-admin-tabs li:last-of-type {
+    margin: 0;
+}
+
+.geot-admin-tabs li a {
+    color: #666;
+    display: block;
+    padding: 20px 0 18px 0;
+    text-decoration: none;
+    border-bottom: 2px solid #fff;
+    box-shadow: none;
+}
+
+.geot-admin-tabs li a:hover {
+    border-color: #999;
+}
+
+.geot-admin-tabs li a.active {
+    border-color: #e27730;
+}
+table#puntajes input {
+    width: 50px;
+    text-align: center;
+}

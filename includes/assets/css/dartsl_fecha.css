@@ -1,0 +1,25 @@
+table#partidos input {
+     width: 50px;
+     text-align: center;
+ }
+input.player_score{
+    font-size: 4em;
+    color: #000;
+}
+td.left_match{
+    text-align: right;
+}
+td.left_match div,
+td.right_match div{
+    margin-bottom: 5px;
+}
+.match_name {
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+.match_avg input,
+.match_co input{
+    font-size: 12px;
+    padding: 0;
+}

@@ -12,7 +12,7 @@ class DartsL_Fecha_Cpt {
 		add_action( 'init', [ $this, 'register_cpt' ] );
 		add_action( 'add_meta_boxes_dartsl_fecha_cpt', [ $this, 'add_meta_boxes' ], 99 );
 		add_action( 'admin_enqueue_scripts', [ $this, 'load_scripts' ] );
-		#add_action( 'save_post_dartsl_fecha_cpt', [ $this, 'save_meta_options' ] );
+		add_action( 'save_post_dartsl_fecha_cpt', [ $this, 'save_meta_options' ] );
 		#add_filter( 'manage_dartsl_fecha_cpt_posts_columns', [ $this, 'set_custom_cpt_columns' ] );
 		#add_action( 'manage_dartsl_fecha_cpt_posts_custom_column', [ $this, 'set_custom_cpt_values' ], 10, 2 );
 		#add_filter( 'wp_insert_post_data', [ $this, 'modify_post_name' ], 10, 2 );
@@ -83,10 +83,17 @@ class DartsL_Fecha_Cpt {
 		if( 'dartsl_fecha_cpt' != get_post_type() ) {
 			return;
 		}
-		wp_enqueue_script( 'dartsl-selectize');
-		wp_enqueue_script( 'dartsl-admin', DARTSL_PLUGIN_URL . 'includes/assets/js/dartsl_fecha_cpt.js', ['jquery','dartsl-selectize'], DARTSL_VERSION, true );
+		// Admin scripts
+		if( is_admin() ) {
+			wp_enqueue_script( 'dartsl-selectize' );
+			wp_enqueue_script( 'dartsl-admin', DARTSL_PLUGIN_URL . 'includes/assets/js/dartsl_fecha_cpt.js', [
+				'jquery',
+				'dartsl-selectize'
+			], DARTSL_VERSION, true );
 
-		wp_enqueue_style( 'dartsl-selectize');
+			wp_enqueue_style( 'dartsl-selectize' );
+			wp_enqueue_style( 'dartsl-admin-fecha', DARTSL_PLUGIN_URL . 'includes/assets/css/dartsl_fecha.css', DARTSL_VERSION );
+		}
 	}
 
 	/**
@@ -192,18 +199,19 @@ class DartsL_Fecha_Cpt {
 	 */
 	public function dartsl_opciones( $post, $metabox ) {
 
-		$data = get_post_meta($post->ID, 'dartls');
-		$torneo = get_post_meta($post->ID, 'dartls_torneo');
+		$data = get_post_meta($post->ID, 'dartls_fecha', true);
+		$torneo = get_post_meta($post->ID, 'dartls_torneo',true);
 		$data = wp_parse_args( $data,
 			[
-				'participantes' => []
+				'participantes' => [],
+				'torneo'    => ''
 			]
 		);
 		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/opciones-fecha.php';
 	}
 
 	public function dartsl_resultados( $post, $metabox ) {
-
+		$torneo = get_post_meta($post->ID, 'dartls_torneo',true);
 		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/resultados-fecha.php';
 	}
 
@@ -213,7 +221,7 @@ class DartsL_Fecha_Cpt {
 	 * @since 1.0.0
 	 */
 	function save_meta_options( $post_id ) {
-
+		global $wpdb;
 		// Verify that the nonce is set and valid.
 		if ( ! isset( $_POST['dartsl_options_nonce'] ) || ! wp_verify_nonce( $_POST['dartsl_options_nonce'], 'dartsl_options' ) ) {
 			return $post_id;
@@ -240,52 +248,18 @@ class DartsL_Fecha_Cpt {
 			return $post_id;
 		}
 
-		$opts = $_POST['dartsl'];
-		unset( $_POST['dartsl'] );
 
-		$post = get_post( $post_id );
-		$outs = dartsl_options($post_id);
-		$settings = dartsl_settings();
+		if( is_array($_POST['winner']) ) {
 
-		if ( isset( $post->post_name ) ) {
-			$source_slug          = sanitize_title( $opts['source_slug'] );
-			$input['source_slug'] = $post->post_name == $source_slug ? $source_slug : $post->post_name;
-		} else
-			$input['source_slug'] = sanitize_title( $opts['source_slug'] );
+			// delete previous matches and insert again
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}dartsl_matches WHERE fecha_id = %d", $post_id ) );
+			foreach ( $_POST['winner'] as $match_index => $winner ){
+				$sql = "INSERT INTO {$wpdb->prefix}dartsl_matches (torneo_id, fecha_id, winner, player1_id, player1_score, player1_avg, player1_co, player2_id, player2_score, player2_avg, player2_co) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)";
+				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $winner, $_POST['player1_id'][$match_index], $_POST['player1_score'][$match_index], $_POST['player1_avg'][$match_index], $_POST['player1_co'][$match_index], $_POST['player2_id'][$match_index], $_POST['player2_score'][$match_index], $_POST['player2_avg'][$match_index], $_POST['player2_co'][$match_index] ) );
 
-		$input['status_code'] = is_numeric( $opts['status_code'] ) ? sanitize_title( $opts['status_code'] ) : '302';
-
-		$input['dest_default'] = !empty( $opts['dest_default'] ) ? esc_url( $opts['dest_default'] ) : '';
-
-		// Counters
-		if( isset($settings['opt_stats']) && $settings['opt_stats'] == 1 ) {
-			$input['count_click'] = isset( $outs['count_click'] ) ? $outs['count_click'] : 0;
-			$input['click_default'] = isset( $outs['click_default'] ) ? $outs['click_default'] : 0;
-		}
-
-
-		if ( is_array( $opts['dest'] ) && count( $opts['dest'] ) > 0 ) {
-			$i = 0;
-			foreach ( $opts['dest'] as $data ) {
-				$key                              = 'dest_' . $i;
-				$input['dest'][ $key ]['url']		= esc_url( $data['url'] );
-				$input['dest'][ $key ]['countries']	= is_array($data['countries']) ? array_map('esc_attr', $data['countries'] ) : [];
-				$input['dest'][ $key ]['regions']	= is_array($data['regions']) ? array_map('esc_attr', $data['regions'] ) : [];
-				$input['dest'][ $key ]['states']	= esc_attr( $data['states'] );
-				$input['dest'][ $key ]['cities']	= esc_attr( $data['cities'] );
-				$input['dest'][ $key ]['device']	= esc_attr( $data['device'] );
-				$input['dest'][ $key ]['ref']		= esc_url( $data['ref'] );
-
-				if( isset($settings['opt_stats']) && $settings['opt_stats'] == 1 )
-					$input['dest'][ $key ]['count_dest'] = isset( $outs['dest'][ $key ]['count_dest'] ) ? $outs['dest'][ $key ]['count_dest'] : 0;
-				$i ++;
 			}
 		}
 
-		$input = apply_filters( 'dartsl/metaboxes/sanitized_options', $input, $post_id );
-
-		// save box settings
-		update_post_meta( $post_id, 'dartsl_options', $input);
 	}
 
 	/**
