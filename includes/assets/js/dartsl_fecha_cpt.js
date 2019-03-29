@@ -115,15 +115,15 @@
                             '<td class="left_match">' +
                                 '<input type="hidden" name="winner[]" value="'+ partido.winner+'">' +
                                 '<div class="match_name"><span>' + partido.player1_name + ' </span><input type="hidden" name="player1_id[]" value="'+ partido.player1_id+'"></div>' +
-                                '<div class="match_avg">Avg <input type="number" name="player1_avg[]" value=""></div>' +
-                                '<div class="match_co">CO <input type="number" name="player1_co[]" value=""></div>' +
+                                '<div class="match_avg">Avg <input type="number" step="0.01" name="player1_avg[]" value=""></div>' +
+                                '<div class="match_co">CO <input type="number" step="0.01" name="player1_co[]" value=""></div>' +
                             '</td>' +
                             '<td><input type="text" class="player_score" name="player1_score[]" value="'+ partido.player1_score+'" disabled><input type="hidden" name="player1_score[]" value="'+ partido.player1_score+'"></td>' +
                             '<td><input type="text" class="player_score" name="player2_score[]" value="'+ partido.player2_score+'" disabled><input type="hidden" name="player2_score[]" value="'+ partido.player2_score+'"></td>' +
                             '<td class="right_match">' +
                             '<div class="match_name"><span>' + partido.player2_name + '</span> <input type="hidden" name="player2_id[]" value="'+ partido.player2_id+'"></div>' +
-                            '<div class="match_avg"><input type="number" name="player2_avg[]" value=""> Avg</div>' +
-                            '<div class="match_co"><input type="number" name="player2_co[]" value=""> CO</div>' +
+                            '<div class="match_avg"><input type="number" step="0.01" name="player2_avg[]" value=""> Avg</div>' +
+                            '<div class="match_co"><input type="number" step="0.01" name="player2_co[]" value=""> CO</div>' +
                             '</td>' +
                             '</tr>';
                     });
@@ -177,15 +177,15 @@
                             '<td class="left_match">' +
                                 '<input type="hidden" name="winner[]" value="'+ partido.winner+'">' +
                                 '<div class="match_name">' + partido.player1_name + ' <select name="player1_id[]" class="dartsl_participante" placeholder="Nombre en la web?"></select></div>' +
-                                '<div class="match_avg">Avg <input type="number" name="player1_avg[]" value=""></div>' +
-                                '<div class="match_co">CO <input type="number" name="player1_co[]" value=""></div>' +
+                                '<div class="match_avg">Avg <input type="number" step="0.01" name="player1_avg[]" value=""></div>' +
+                                '<div class="match_co">CO <input type="number" step="0.01" name="player1_co[]" value=""></div>' +
                             '</td>' +
                             '<td><input type="text" class="player_score" name="player1_score[]" value="'+ partido.player1_score+'" disabled><input type="hidden" name="player1_score[]" value="'+ partido.player1_score+'"></td>' +
                             '<td><input type="text" class="player_score" name="player2_score[]" value="'+ partido.player2_score+'" disabled><input type="hidden" name="player2_score[]" value="'+ partido.player2_score+'"></td>' +
                             '<td class="right_match">' +
                             '<div class="match_name">' + partido.player2_name + ' <select name="player2_id[]" class="dartsl_participante" placeholder="Nombre en la web?"></select></div>' +
-                            '<div class="match_avg"><input type="number" name="player2_avg[]" value=""> Avg</div>' +
-                            '<div class="match_co"><input type="number" name="player2_co[]" value=""> CO</div>' +
+                            '<div class="match_avg"><input type="number" step="0.01" name="player2_avg[]" value=""> Avg</div>' +
+                            '<div class="match_co"><input type="number" step="0.01" name="player2_co[]" value=""> CO</div>' +
                             '</td>' +
                             '</tr>';
                     });

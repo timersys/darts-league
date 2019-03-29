@@ -45,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php endif;?>
 		</td>
 	</tr>
-	<?php if (isset($torneo['comenzado'])) {?>
+
 		<tr>
 			<th><label>&emsp;&emsp;&emsp;&emsp;<?php _e( 'Challonge', 'dartsl' ); ?></label></th>
 			<td>
@@ -55,7 +55,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</p>
 			</td>
 		</tr>
-	<?php }?>
+
 
 </table>
 <select name="placholder_select" class="dartsl_participantes_placeholder" disabled style="display: none">
