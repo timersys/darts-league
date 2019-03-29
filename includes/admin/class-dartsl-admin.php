@@ -141,7 +141,8 @@ class Dartsl_Admin {
 	 * @since    1.0.0
 	 */
 	public function enqueue_scripts() {
-		wp_enqueue_style( 'dartsl-admin', DARTSL_PLUGIN_URL . 'includes/assets/css/admin.css', DARTSL_VERSION );
+		if( isset($_GET['page']) && $_GET['page'] == 'dartsl-opts' )
+			wp_enqueue_style( 'dartsl-admin', DARTSL_PLUGIN_URL . 'includes/assets/css/admin.css', DARTSL_VERSION );
 	}
 
 

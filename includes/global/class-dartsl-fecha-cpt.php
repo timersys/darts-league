@@ -12,8 +12,9 @@ class DartsL_Fecha_Cpt {
 		add_action( 'init', [ $this, 'register_cpt' ] );
 		add_action( 'add_meta_boxes_dartsl_fecha_cpt', [ $this, 'add_meta_boxes' ], 99 );
 		add_action( 'admin_enqueue_scripts', [ $this, 'load_scripts' ] );
+		add_action( 'wp_enqueue_scripts', [ $this, 'load_scripts' ] );
 		add_action( 'save_post_dartsl_fecha_cpt', [ $this, 'save_meta_options' ] );
-		#add_filter( 'manage_dartsl_fecha_cpt_posts_columns', [ $this, 'set_custom_cpt_columns' ] );
+		add_filter( 'the_content', [ $this, 'add_fecha_into_content' ] );
 		#add_action( 'manage_dartsl_fecha_cpt_posts_custom_column', [ $this, 'set_custom_cpt_values' ], 10, 2 );
 		#add_filter( 'wp_insert_post_data', [ $this, 'modify_post_name' ], 10, 2 );
 	}
@@ -51,7 +52,7 @@ class DartsL_Fecha_Cpt {
 			'show_ui'             => true,
 			'query_var'           => true,
 			'exclude_from_search' => false,
-			'rewrite'             => [ 'slug' => 'darts-league' ],
+			'rewrite'             => [ 'slug' => 'fecha' ],
 			'capability_type'     => 'post',
 			'capabilities'        => [
 				'publish_posts'       => apply_filters( 'dartsl_settings_page_roles', 'manage_options' ),
@@ -80,7 +81,7 @@ class DartsL_Fecha_Cpt {
 	 */
 	function load_scripts( $hook ) {
 
-		if( 'dartsl_fecha_cpt' != get_post_type() ) {
+		if( 'dartsl_cpt' != get_post_type() && 'dartsl_fecha_cpt' != get_post_type() ) {
 			return;
 		}
 		// Admin scripts
@@ -92,8 +93,10 @@ class DartsL_Fecha_Cpt {
 			], DARTSL_VERSION, true );
 
 			wp_enqueue_style( 'dartsl-selectize' );
-			wp_enqueue_style( 'dartsl-admin-fecha', DARTSL_PLUGIN_URL . 'includes/assets/css/dartsl_fecha.css', DARTSL_VERSION );
 		}
+
+		wp_enqueue_style( 'dartsl-admin-fecha', DARTSL_PLUGIN_URL . 'includes/assets/css/dartsl_fecha.css', DARTSL_VERSION );
+
 	}
 
 	/**
@@ -204,7 +207,7 @@ class DartsL_Fecha_Cpt {
 		$data = wp_parse_args( $data,
 			[
 				'participantes' => [],
-				'torneo'    => ''
+				'torneo'    => '',
 			]
 		);
 		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/opciones-fecha.php';
@@ -248,14 +251,16 @@ class DartsL_Fecha_Cpt {
 			return $post_id;
 		}
 
+		update_post_meta($post_id, 'torneo_id', $_POST['dartsl']['torneo']);
 
 		if( is_array($_POST['winner']) ) {
 
 			// delete previous matches and insert again
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}dartsl_matches WHERE fecha_id = %d", $post_id ) );
 			foreach ( $_POST['winner'] as $match_index => $winner ){
+				$winner_id = $winner == 'player1' ?  $_POST['player1_id'][$match_index] :  $_POST['player2_id'][$match_index];
 				$sql = "INSERT INTO {$wpdb->prefix}dartsl_matches (torneo_id, fecha_id, winner, player1_id, player1_score, player1_avg, player1_co, player2_id, player2_score, player2_avg, player2_co) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)";
-				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $winner, $_POST['player1_id'][$match_index], $_POST['player1_score'][$match_index], $_POST['player1_avg'][$match_index], $_POST['player1_co'][$match_index], $_POST['player2_id'][$match_index], $_POST['player2_score'][$match_index], $_POST['player2_avg'][$match_index], $_POST['player2_co'][$match_index] ) );
+				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $winner_id, $_POST['player1_id'][$match_index], $_POST['player1_score'][$match_index], $_POST['player1_avg'][$match_index], $_POST['player1_co'][$match_index], $_POST['player2_id'][$match_index], $_POST['player2_score'][$match_index], $_POST['player2_avg'][$match_index], $_POST['player2_co'][$match_index] ) );
 
 			}
 		}
@@ -263,57 +268,118 @@ class DartsL_Fecha_Cpt {
 	}
 
 	/**
-	 * Modify post_name
-	 * @since 1.0.0
+	 * Añade info de la fecha al final del post
+	 * @param $content
 	 *
-	 * @param $data
-	 * @param $postarr
-	 *
-	 * @return mixed
+	 * @return string
 	 */
-	public function modify_post_name( $data, $postarr ) {
+	public function add_fecha_into_content($content) {
+		global $wpdb;
+		if( 'dartsl_fecha_cpt' != get_post_type() )
+			return $content;
 
-		if ( ! isset( $postarr['dartsl_options_nonce'] ) ||
-		     ! wp_verify_nonce( $postarr['dartsl_options_nonce'], 'dartsl_options' ) ||
-		     $postarr['post_type'] != 'dartsl_fecha_cpt' ||
-		     $postarr['post_status'] != 'publish' ||
-		     $postarr['post_parent'] != 0
-		) {
-			return $data;
-		}
+		// partidos
+		$partidos = $wpdb->get_results( $wpdb->prepare("SELECT *, user1.display_name as player1_name, user2.display_name as player2_name FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id WHERE fecha_id = %d", get_the_id() ) );
+		// posiciones fecha
+		$posiciones = $wpdb->get_results( $wpdb->prepare( "SELECT jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co
+FROM
+( SELECT  fecha_id, user1.display_name as jugador, 
+     CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
+     CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END as Loss, 
+     CASE WHEN player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
+     player1_co AS co,
+     player1_avg as darts_avg,
+	 player1_score as score,
+ player2_score as lc
+  FROM {$wpdb->prefix}dartsl_matches 
+  LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
+  UNION ALL
+  SELECT  fecha_id, user2.display_name as jugador,
+     CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END as Win, 
+     CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END as Loss, 
+     CASE WHEN player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
+     player2_co AS co,
+     player2_avg as darts_avg,
+ 	player2_score as score,
+  player1_score as lc
+  FROM {$wpdb->prefix}dartsl_matches 
+  LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
+) t
+  WHERE fecha_id = %d
+GROUP BY jugador
+ORDER By ganados DESC, perdidos DESC, lf DESC", get_the_id()));
 
-		$post_id = isset( $postarr['ID'] ) && is_numeric( $postarr['ID'] ) ? $postarr['ID'] : 0;
 
-		// If this is an autosave, our form has not been submitted, so we don't want to do anything.
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return $data;
-		}
-		// same for ajax
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			return $data;
-		}
-		// same for cron
-		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-			return $data;
-		}
-		// same for posts revisions
-		if ( is_int( wp_is_post_autosave( $post_id ) ) ) {
-			return $data;
-		}
+		ob_start();
+		?>
+		<h2>Puntos obtenidos en la fecha <?php the_title();?> del torneo <a href="<?= get_permalink($partidos[0]->torneo_id);?>" target="_blank"><?php echo get_the_title($partidos[0]->torneo_id);?></a></h2>
+		<table id="posiciones">
+			<thead>
+				<tr>
+					<th>Nombre</th><th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>CO</th><th>AVG</th><th>Pts</th>
+				</tr>
+			</thead>
+			<?php
+			$opts = get_option('dartsl_settings');
+			$puestos = $opts['puestos'];
+			if( !empty($posiciones) ) {
+				foreach ($posiciones as $i => $pos) {
+					echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$puestos[$i+1].'</td></tr>';
+				}
+			}
+			?>
+		</table>
+		<h2>Partidos jugados</h2>
+		<table id="partidos">
+			<?php
+			if( !empty($partidos) ) {
+				foreach ($partidos as $partido) {
+					$partido = (array) $partido;
 
-		// can user edit this post?
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
-			return $data;
-		}
+					echo '<tr>' .
+					     '<td class="left_match">' .
+					     '<div class="match_name"><span>' . $partido['player1_name'] . '</span></div>' .
+					     '<div class="match_avg">Avg: '.$partido['player1_avg'] . '</div>' .
+					     '<div class="match_co">CO: ' . $partido['player1_co'] . '</div>' .
+					     '</td>' .
+					     '<td><div class="score">'. $partido['player1_score'].'</div></td>' .
+					     '<td><div class="score">'. $partido['player2_score'].'</div></td>' .
+					     '<td class="right_match">' .
+					     '<div class="match_name"><span>' . $partido['player2_name'] . '</span> </div>' .
+					     '<div class="match_avg">' . $partido['player2_avg'] . ' Avg</div>' .
+					     '<div class="match_co">' . $partido['player2_co'] . ' CO</div>' .
+					     '</td>' .
+					     '</tr>';
+				}
+			}
+			?>
+		</table>
+		<script>
+            (function($){
+                let cos =[];
+                $('.maximo_co').each(function () {
+                    cos.push(parseInt($(this).text()))
+                });
+                const max_co = Math.max.apply(null, cos);
+                $('.maximo_co').each(function () {
+                    $(this).toggleClass('max', +$(this).text() === max_co)
+                });
+                let avgs =[];
+                $('.maximo_avg').each(function () {
+                    avgs.push(parseInt($(this).text()))
+                });
+                const max_avg = Math.max.apply(null, avgs);
+                $('.maximo_avg').each(function () {
+                    $(this).toggleClass('max', +$(this).text() === max_avg)
+                });
 
-		$post_type   = $postarr['post_type'];
-		$post_status = $postarr['post_status'];
-		$post_parent = $postarr['post_parent'];
-		$post_name   = sanitize_title( $postarr['dartsl']['source_slug'] );
 
-		$data['post_name'] = wp_unique_post_slug( $post_name, $post_id, $post_status, $post_type, $post_parent );
+            })(jQuery)
+		</script>
+		<?php
+		$html = ob_get_clean();
 
-		return $data;
+		return $content . PHP_EOL . $html;
 	}
 }
 

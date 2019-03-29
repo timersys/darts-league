@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php
 					$users = get_users();
 					 foreach ( $users as $user ) : ?>
-						<option value="<?php echo $user->ID; ?>" <?php selected(true, in_array( $user->ID, $data['participantes'])); ?>> <?php echo $user->user_login; ?></option>
+						<option value="<?php echo $user->ID; ?>" <?php selected(true, in_array( $user->ID, $data['participantes'])); ?>> <?php echo $user->display_name; ?></option>
 					<?php endforeach; ?>
 			</select>
 			<?php if( isset($torneo['comenzado']) ) :?>
@@ -45,5 +45,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php endif;?>
 		</td>
 	</tr>
+	<?php if (isset($torneo['comenzado'])) {?>
+		<tr>
+			<th><label>&emsp;&emsp;&emsp;&emsp;<?php _e( 'Challonge', 'dartsl' ); ?></label></th>
+			<td>
+				<input type="text" name="dartsl[challonge_url]" class="regular-text challonge_url_field" value="<?= isset($torneo['challonge_url'])? $torneo['challonge_url'] : '';?>" <?= isset($torneo['comenzado']) ? 'disabled' : '';?>/>
+					<p class="help-text">
+						Ingresa la url de la fecha y hace click en este boton para obtener resultados de una fecha ya jugada <button class="components-button is-button is-default is-primary is-small obtener_datos">Obtener datos</button> <span id="generar_llave_success"></span>
+					</p>
+			</td>
+		</tr>
+	<?php }?>
 
 </table>
+<select name="placholder_select" class="dartsl_participantes_placeholder" disabled style="display: none">
+	<?php
+	$users = get_users();
+	foreach ( $users as $user ) : ?>
+		<option value="<?php echo $user->ID; ?>" > <?php echo $user->display_name; ?></option>
+	<?php endforeach; ?>
+</select>

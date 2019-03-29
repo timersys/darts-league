@@ -12,11 +12,14 @@ class DartsL_Challonge {
 	public function __construct() {
 		require_once (DARTSL_PLUGIN_DIR . 'vendor/autoload.php');
 		require_once (DARTSL_PLUGIN_DIR . 'includes/admin/class-challonge-wrapper.php');
-		$this->challonge = new Challonge_Wrapper('dYMrIaPtMKsIBAMpU7v8M5MOEUqoFtLEMd6uppfH');
-
+		$opts = get_option('dartsl_settings');
+		if( !empty($opts['api_key']) ) {
+			$this->challonge = new Challonge_Wrapper( $opts['api_key'] );
+		}
 		add_action( 'wp_ajax_generar_llave', [ $this, 'ajax_generar_llave'] );
 		add_action( 'wp_ajax_comenzar_torneo', [ $this, 'ajax_comenzar_torneo'] );
 		add_action( 'wp_ajax_cargar_resultados', [ $this, 'ajax_cargar_resultados'] );
+		add_action( 'wp_ajax_obtener_datos_existentes', [ $this, 'ajax_obtener_datos_existentes'] );
 	}
 
 	/**
@@ -180,6 +183,59 @@ class DartsL_Challonge {
 			usort($resultados->tournament->participants, function ($a,$b) {
 					return $a->participant->final_rank <> $b->participant->final_rank;
 			});
+
+			echo json_encode( [ 'success' => ['matches' => $matches, 'standings' => $resultados->tournament->participants] ] );
+			wp_die();
+		}catch (Exception $e) {
+			echo json_encode( [ 'error' => $e->getMessage() ] );
+			wp_die();
+		}
+	}
+	public function ajax_obtener_datos_existentes() {
+		$post_id = $_POST['post_id'];
+		$url = $_POST['url'];
+
+		if( empty($post_id) || empty($url) ){
+			die();
+		}
+
+		try {
+
+			$resultados = $this->challonge->getTorneo(str_replace('https://challonge.com/','', $url), ['include_matches' => 1, 'include_participants' => '1']);
+
+			if( isset($resultados->error) ) {
+				echo json_encode( [ 'error' => $resultados->error ] );
+				wp_die();
+			}
+			if( isset($resultados->tournament) && is_null($resultados->tournament->completed_at) ) {
+				echo json_encode( [ 'error' => 'El torneo no ha finalizado aun'] );
+				wp_die();
+			}
+			$matches = [];
+			if( isset($resultados->tournament->matches) && isset($resultados->tournament->participants) ) {
+				foreach ($resultados->tournament->matches as $match) {
+					$player1 = $this->findParticipant( $match->match->player1_id, $resultados->tournament->participants)[0];
+					$player2 = $this->findParticipant( $match->match->player2_id, $resultados->tournament->participants)[0];
+
+					$matches[] = [
+						'player1_id' => $player1->participant->misc,
+						'player1_name' => $player1->participant->name,
+						'player1_score' => strstr($match->match->scores_csv, '-', true),
+						'player2_id' => $player2->participant->misc,
+						'player2_name' => $player2->participant->name,
+						'player2_score' => trim(strstr($match->match->scores_csv, '-', false),'-'),
+						'winner'  => $match->match->player1_id == $match->match->winner_id ?  'player1' :  'player2'
+					];
+				}
+			}
+			usort($resultados->tournament->participants, function ($a,$b) {
+					return $a->participant->final_rank <> $b->participant->final_rank;
+			});
+
+			$torneo['comenzado'] = true;
+			$torneo['challonge_url'] = $resultados->tournament->url;
+			$torneo['challonge_tournament_id'] = $resultados->tournament->id;
+			update_post_meta( $post_id, 'dartls_torneo', $torneo);
 
 			echo json_encode( [ 'success' => ['matches' => $matches, 'standings' => $resultados->tournament->participants] ] );
 			wp_die();

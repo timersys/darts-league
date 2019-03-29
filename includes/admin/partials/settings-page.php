@@ -7,6 +7,7 @@
 
 $defaults = [
 	'puestos'   => [],
+	'api_key'   => '',
 ];
 $opts     = wp_parse_args( $opts,  $defaults  );
 
@@ -18,6 +19,13 @@ $opts     = wp_parse_args( $opts,  $defaults  );
 
 			<tr valign="top" class="geot-settings-title">
 				<th colspan="2"><h3><?php _e( 'Opciones generales:', 'dartsl' ); ?></h3></th>
+			</tr>
+			<tr valign="top" class="">
+				<th><label for="license"><?php _e( 'API key challonge', 'dartsl' ); ?></label></th>
+				<td colspan="3">
+					<input type="text" class="regular-text" name="dartsl[api_key]" value="<?= $opts['api_key'];?>">
+					<p class="help-text">Obten tu api key en <a href="https://challonge.com/settings/developer">Challonge</a> </p>
+				</td>
 			</tr>
 			<tr valign="top" class="">
 				<th><label for="license"><?php _e( 'Puntajes', 'dartsl' ); ?></label></th>

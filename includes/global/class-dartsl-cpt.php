@@ -10,6 +10,7 @@ class DartsL_Cpt {
 	 */
 	public function __construct() {
 		add_action( 'init', [ $this, 'register_cpt' ] );
+		add_filter( 'the_content', [ $this, 'add_torneo_info'] );
 	}
 
 	/**
@@ -43,7 +44,7 @@ class DartsL_Cpt {
 			'show_ui'             => true,
 			'query_var'           => true,
 			'exclude_from_search' => false,
-			'rewrite'             => [ 'slug' => 'darts-league' ],
+			'rewrite'             => [ 'slug' => 'torneo' ],
 			'capability_type'     => 'post',
 			'capabilities'        => [
 				'publish_posts'       => apply_filters( 'dartsl_settings_page_roles', 'manage_options' ),
@@ -65,6 +66,132 @@ class DartsL_Cpt {
 
 		register_post_type( 'dartsl_cpt', $args );
 
+	}
+
+	/**
+	 * Añade info del torneo al post
+	 * @param $content
+	 *
+	 * @return string
+	 */
+	public function add_torneo_info($content){
+		global $wpdb;
+		if( 'dartsl_cpt' != get_post_type() )
+			return $content;
+
+		// fechas
+
+		// partidos
+		$fechas = $wpdb->get_col( $wpdb->prepare("SELECT ID FROM {$wpdb->prefix}posts p LEFT JOIN $wpdb->postmeta pm ON p.ID = pm.post_id  WHERE meta_key = 'torneo_id' AND meta_value = %d", get_the_id() ) );
+		$partidos = $wpdb->get_results( "SELECT fecha_id, player1_id, player1_score,player1_co, player1_avg, player2_id, player2_score, player2_co, player2_avg, user1.display_name as player1_name, user2.display_name as player2_name, p.post_title, p.post_name as slug FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id LEFT JOIN $wpdb->posts p ON p.ID = fecha_id WHERE fecha_id IN ('".implode("','",$fechas)."')"   );
+
+
+
+		// posiciones fecha
+		$posiciones = $wpdb->get_results( $wpdb->prepare( "SELECT jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co
+FROM
+( SELECT  torneo_id, user1.display_name as jugador, 
+     CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
+     CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END as Loss, 
+     CASE WHEN player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
+     player1_co AS co,
+     player1_avg as darts_avg,
+	 player1_score as score,
+ player2_score as lc
+  FROM {$wpdb->prefix}dartsl_matches 
+  LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
+  UNION ALL
+  SELECT  torneo_id, user2.display_name as jugador,
+     CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END as Win, 
+     CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END as Loss, 
+     CASE WHEN player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
+     player2_co AS co,
+     player2_avg as darts_avg,
+ 	player2_score as score,
+  player1_score as lc
+  FROM {$wpdb->prefix}dartsl_matches 
+  LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
+) t
+  WHERE torneo_id = %d
+GROUP BY jugador
+ORDER By ganados DESC, perdidos DESC, lf DESC", get_the_id()));
+
+
+		ob_start();
+		?>
+		<h2>Tabla de posiciones del torneo <?php the_title();?></a></h2>
+		<table id="posiciones">
+			<thead>
+			<tr>
+				<th>Nombre</th><th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>CO</th><th>AVG</th><th>Pts</th>
+			</tr>
+			</thead>
+			<?php
+			$opts = get_option('dartsl_settings');
+			$puestos = $opts['puestos'];
+			if( !empty($posiciones) ) {
+				foreach ($posiciones as $i => $pos) {
+					echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$puestos[$i+1].'</td></tr>';
+				}
+			}
+			?>
+		</table>
+		<h2>Fechas jugadas</h2>
+		<table id="partidos">
+			<?php
+			$fecha_id = -1;
+			if( !empty($partidos) ) {
+				foreach ($partidos as $partido) {
+					$partido = (array) $partido;
+					if($partido['fecha_id'] != $fecha_id) {
+						echo '<tr><td><h3><a href="'.site_url('fecha/'.$partido['slug']).'" target="_blank" >'.$partido['post_title'].'</a></h3></td></tr>';
+					}
+					echo '<tr>' .
+					     '<td class="left_match">' .
+					     '<div class="match_name"><span>' . $partido['player1_name'] . '</span></div>' .
+					     '<div class="match_avg">Avg: '.$partido['player1_avg'] . '</div>' .
+					     '<div class="match_co">CO: ' . $partido['player1_co'] . '</div>' .
+					     '</td>' .
+					     '<td><div class="score">'. $partido['player1_score'].'</div></td>' .
+					     '<td><div class="score">'. $partido['player2_score'].'</div></td>' .
+					     '<td class="right_match">' .
+					     '<div class="match_name"><span>' . $partido['player2_name'] . '</span> </div>' .
+					     '<div class="match_avg">' . $partido['player2_avg'] . ' Avg</div>' .
+					     '<div class="match_co">' . $partido['player2_co'] . ' CO</div>' .
+					     '</td>' .
+					     '</tr>';
+
+					$fecha_id = $partido['fecha_id'];
+				}
+			}
+			?>
+		</table>
+		<script>
+            (function($){
+                let cos =[];
+                $('.maximo_co').each(function () {
+	                cos.push(parseInt($(this).text()))
+                });
+                const max_co = Math.max.apply(null, cos);
+                $('.maximo_co').each(function () {
+                    $(this).toggleClass('max', +$(this).text() === max_co)
+                });
+                let avgs =[];
+                $('.maximo_avg').each(function () {
+                    avgs.push(parseInt($(this).text()))
+                });
+                const max_avg = Math.max.apply(null, avgs);
+                $('.maximo_avg').each(function () {
+                    $(this).toggleClass('max', +$(this).text() === max_avg)
+                });
+
+
+            })(jQuery)
+		</script>
+		<?php
+		$html = ob_get_clean();
+
+		return $content . PHP_EOL . $html;
 	}
 
 }

@@ -1,4 +1,5 @@
-table#partidos input {
+table#partidos input ,
+table#puntajes input {
      width: 50px;
      text-align: center;
  }
@@ -9,11 +10,15 @@ input.player_score{
 td.left_match{
     text-align: right;
 }
+#partidos .selectize-control {
+    text-align: left;
+    max-width: 100%;
+}
 td.left_match div,
 td.right_match div{
     margin-bottom: 5px;
 }
-.match_name {
+.match_name span{
     font-weight: bold;
     text-transform: uppercase;
     margin-top: 5px;
@@ -22,4 +27,18 @@ td.right_match div{
 .match_co input{
     font-size: 12px;
     padding: 0;
+}
+
+#partidos .score {
+    font-size: 3em;
+    font-weight: bold;
+    text-align: center;
+}
+#partidos .match_avg ,
+#partidos .match_co {
+    font-size: 12px;
+    padding: 0;
+}
+#posiciones td.max{
+    background-color: #edfbe7;
 }
