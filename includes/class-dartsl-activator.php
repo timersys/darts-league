@@ -56,6 +56,7 @@ class DartsL_Activator {
 		`fecha_id` 	INT(6) UNSIGNED NOT NULL, -- fecha post id
 		`user_id` 	INT(6) UNSIGNED NOT NULL, --  user id
 		`rank` 	INT(6) UNSIGNED NOT NULL, -- ranking for fecha
+		`points` 	INT(6) UNSIGNED NOT NULL, -- points for fecha
 		PRIMARY KEY( `id`),
         INDEX (torneo_id, fecha_id, user_id)
 		) DEFAULT CHARSET=UTF8 COLLATE=UTF8_GENERAL_CI AUTO_INCREMENT=1 ;";

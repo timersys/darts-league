@@ -10,9 +10,10 @@ if( isset($torneo['comenzado']) ) {
 	// partidos
 	$partidos = $wpdb->get_results( $wpdb->prepare( "SELECT *, user1.display_name as player1_name, user2.display_name as player2_name FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id WHERE fecha_id = %d", get_the_id() ) );
 	// posiciones fecha
-	$posiciones = $wpdb->get_results( $wpdb->prepare( "SELECT jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co
+	$posiciones = $wpdb->get_results( $wpdb->prepare(
+		"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif
 FROM
-( SELECT fecha_id, user1.display_name as jugador, 
+( SELECT  dm.fecha_id, user1.display_name as jugador, rank, points,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
      CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END as Loss, 
      CASE WHEN player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
@@ -20,10 +21,11 @@ FROM
      player1_avg as darts_avg,
 	 player1_score as score,
  player2_score as lc
-  FROM {$wpdb->prefix}dartsl_matches 
+  FROM {$wpdb->prefix}dartsl_matches dm
   LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
+  LEFT JOIN {$wpdb->prefix}dartsl_ranks r ON player1_id = r.user_id AND r.fecha_id = %d
   UNION ALL
-  SELECT fecha_id, user2.display_name as jugador,
+  SELECT  dm.fecha_id, user2.display_name as jugador, r2.rank, r2.points,
      CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END as Win, 
      CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END as Loss, 
      CASE WHEN player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
@@ -31,12 +33,13 @@ FROM
      player2_avg as darts_avg,
  	player2_score as score,
   player1_score as lc
-  FROM {$wpdb->prefix}dartsl_matches 
+  FROM {$wpdb->prefix}dartsl_matches dm
   LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
+  LEFT JOIN {$wpdb->prefix}dartsl_ranks r2 ON player2_id = r2.user_id AND r2.fecha_id = %d
 ) t
-  WHERE fecha_id = %d
+  WHERE fecha_id = %d 
 GROUP BY jugador
-ORDER By ganados DESC, perdidos DESC, lf DESC", get_the_id()));
+ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 
 	$rankings = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}dartsl_ranks WHERE fecha_id = %d", get_the_id() ) );
 }
@@ -103,15 +106,14 @@ ORDER By ganados DESC, perdidos DESC, lf DESC", get_the_id()));
 			<table id="posiciones">
 				<thead>
 					<tr>
-						<th>Nombre</th><th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>CO</th><th>AVG</th><th>Pts</th>
+						<th>Nombre</th><th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>Dif.</th><th>CO</th><th>AVG</th><th>Pts</th>
 					</tr>
 				</thead>
 			<?php
 				$opts = get_option('dartsl_settings');
-				$puestos = $opts['puestos'];
 				if( !empty($posiciones) ) {
 					foreach ($posiciones as $i => $pos) {
-						echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->co.'</td><td>'.number_format($pos->avg,2).'</td><td>'.$puestos[$i+1].'</td></tr>';
+						echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td>'.$pos->co.'</td><td>'.number_format($pos->avg,2).'</td><td>'.$pos->points.'</td></tr>';
 					}
 				}
 			?>

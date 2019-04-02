@@ -267,8 +267,9 @@ class DartsL_Fecha_Cpt {
 			$puestos = $opts['puestos'];
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}dartsl_ranks WHERE fecha_id = %d", $post_id ) );
 			foreach ( $_POST['ranking'] as $user_id => $rank ){
+				$points = isset($puestos[$rank]) ? $puestos[$rank] : 0;
 				$sql = "INSERT INTO {$wpdb->prefix}dartsl_ranks (torneo_id, fecha_id, user_id, rank, points) VALUES (%d, %d, %d, %d, %d)";
-				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $user_id, $rank, $puestos[$rank] ) );
+				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $user_id, $rank, $points ) );
 
 			}
 		}
@@ -290,9 +291,9 @@ class DartsL_Fecha_Cpt {
 		$partidos = $wpdb->get_results( $wpdb->prepare("SELECT *, user1.display_name as player1_name, user2.display_name as player2_name FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id WHERE fecha_id = %d", get_the_id() ) );
 		// posiciones fecha
 		$posiciones = $wpdb->get_results( $wpdb->prepare(
-			"SELECT rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif
+			"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif
 FROM
-( SELECT  dm.fecha_id, user1.display_name as jugador, rank,
+( SELECT  dm.fecha_id, user1.display_name as jugador, rank, points,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
      CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END as Loss, 
      CASE WHEN player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
@@ -304,7 +305,7 @@ FROM
   LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
   LEFT JOIN {$wpdb->prefix}dartsl_ranks r ON player1_id = r.user_id AND r.fecha_id = %d
   UNION ALL
-  SELECT  dm.fecha_id, user2.display_name as jugador, r2.rank,
+  SELECT  dm.fecha_id, user2.display_name as jugador, r2.rank, r2.points,
      CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END as Win, 
      CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END as Loss, 
      CASE WHEN player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
@@ -323,6 +324,7 @@ ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 
 		ob_start();
 		?>
+		<!--suppress ALL -->
 		<h2>Puntos obtenidos en la fecha <?php the_title();?> del torneo <a href="<?= get_permalink($partidos[0]->torneo_id);?>" target="_blank"><?php echo get_the_title($partidos[0]->torneo_id);?></a></h2>
 		<table id="posiciones">
 			<thead>
@@ -334,7 +336,7 @@ ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 
 			if( !empty($posiciones) ) {
 				foreach ($posiciones as $i => $pos) {
-					echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$puestos[$i+1].'</td></tr>';
+					echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$pos->points.'</td></tr>';
 				}
 			}
 			?>
