@@ -59,6 +59,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 </table>
 <select name="placholder_select" class="dartsl_participantes_placeholder" disabled style="display: none">
+	<option value="">Selecciona uno</option>
 	<?php
 	$users = get_users();
 	foreach ( $users as $user ) : ?>

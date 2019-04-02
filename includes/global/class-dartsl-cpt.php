@@ -88,7 +88,8 @@ class DartsL_Cpt {
 
 
 		// posiciones fecha
-		$posiciones = $wpdb->get_results( $wpdb->prepare( "SELECT jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co
+		$posiciones = $wpdb->get_results( $wpdb->prepare( "
+SELECT jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co
 FROM
 ( SELECT  torneo_id, user1.display_name as jugador, 
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 

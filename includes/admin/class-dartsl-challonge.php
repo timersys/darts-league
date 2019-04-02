@@ -171,9 +171,11 @@ class DartsL_Challonge {
 
 					$matches[] = [
 						'player1_id' => $player1->participant->misc,
+						'player1_challonge_id' => $player1->participant->id,
 						'player1_name' => $player1->participant->name,
 						'player1_score' => strstr($match->match->scores_csv, '-', true),
 						'player2_id' => $player2->participant->misc,
+						'player2_challonge_id' => $player2->participant->id,
 						'player2_name' => $player2->participant->name,
 						'player2_score' => trim(strstr($match->match->scores_csv, '-', false),'-'),
 						'winner'  => $match->match->player1_id == $match->match->winner_id ?  $player1->participant->misc :  $player2->participant->misc
@@ -184,7 +186,7 @@ class DartsL_Challonge {
 					return $a->participant->final_rank <> $b->participant->final_rank;
 			});
 
-			echo json_encode( [ 'success' => ['matches' => $matches, 'standings' => $resultados->tournament->participants] ] );
+			echo json_encode( [ 'success' => ['matches' => $matches, 'participants' => $resultados->tournament->participants] ] );
 			wp_die();
 		}catch (Exception $e) {
 			echo json_encode( [ 'error' => $e->getMessage() ] );
@@ -219,9 +221,11 @@ class DartsL_Challonge {
 
 					$matches[] = [
 						'player1_id' => $player1->participant->misc,
+						'player1_challonge_id' => $player1->participant->id,
 						'player1_name' => $player1->participant->name,
 						'player1_score' => strstr($match->match->scores_csv, '-', true),
 						'player2_id' => $player2->participant->misc,
+						'player2_challonge_id' => $player2->participant->id,
 						'player2_name' => $player2->participant->name,
 						'player2_score' => trim(strstr($match->match->scores_csv, '-', false),'-'),
 						'winner'  => $match->match->player1_id == $match->match->winner_id ?  'player1' :  'player2'
@@ -237,7 +241,7 @@ class DartsL_Challonge {
 			$torneo['challonge_tournament_id'] = $resultados->tournament->id;
 			update_post_meta( $post_id, 'dartls_torneo', $torneo);
 
-			echo json_encode( [ 'success' => ['matches' => $matches, 'standings' => $resultados->tournament->participants] ] );
+			echo json_encode( [ 'success' => ['matches' => $matches, 'participants' => $resultados->tournament->participants] ] );
 			wp_die();
 		}catch (Exception $e) {
 			echo json_encode( [ 'error' => $e->getMessage() ] );

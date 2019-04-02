@@ -50,21 +50,35 @@ class DartsL_Activator {
         INDEX (player1_id, player2_id)
 		) DEFAULT CHARSET=UTF8 COLLATE=UTF8_GENERAL_CI AUTO_INCREMENT=1 ;";
 
+		$ranking_table = "CREATE TABLE IF NOT EXISTS `{$wpdb->base_prefix}dartsl_ranks` (
+		`id`	 		INT(6) UNSIGNED NOT NULL AUTO_INCREMENT, -- the id just for numeric
+		`torneo_id` 	INT(6) UNSIGNED NOT NULL, -- torneo post id
+		`fecha_id` 	INT(6) UNSIGNED NOT NULL, -- fecha post id
+		`user_id` 	INT(6) UNSIGNED NOT NULL, --  user id
+		`rank` 	INT(6) UNSIGNED NOT NULL, -- ranking for fecha
+		PRIMARY KEY( `id`),
+        INDEX (torneo_id, fecha_id, user_id)
+		) DEFAULT CHARSET=UTF8 COLLATE=UTF8_GENERAL_CI AUTO_INCREMENT=1 ;";
+
 
 		$table_name = "{$wpdb->base_prefix}dartsl_matches";
+		$ranks_table_name = "{$wpdb->base_prefix}dartsl_ranks";
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name ) {
-try {
-	dbDelta( $fechas_table );
-}catch (Exception $e){
-	echo '<pre>';
-	var_dump($e->getMessage());
-	echo '</pre>';
-	die();
-}
+
+		try {
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) != $table_name )
+				dbDelta( $fechas_table  );
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$ranks_table_name}'" ) != $ranks_table_name )
+				dbDelta(  $ranking_table );
+		}catch (Exception $e){
+			echo '<pre>';
+			var_dump($e->getMessage());
+			echo '</pre>';
+			die();
 		}
+
 		do_action('dartsl_activated');
 	}
 

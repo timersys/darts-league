@@ -37,6 +37,8 @@ FROM
   WHERE fecha_id = %d
 GROUP BY jugador
 ORDER By ganados DESC, perdidos DESC, lf DESC", get_the_id()));
+
+	$rankings = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}dartsl_ranks WHERE fecha_id = %d", get_the_id() ) );
 }
 ?>
 <table class="form-table">
@@ -81,6 +83,15 @@ ORDER By ganados DESC, perdidos DESC, lf DESC", get_the_id()));
 				}
 				?>
 			</table>
+			<div id="rankings">
+				<?php
+				if( !empty($rankings) ) {
+					foreach ( $rankings as $ranking ) {
+						echo '<input type="hidden" name="ranking['.$ranking->user_id.']" value="'.$ranking->rank.'">';
+					}
+				}
+				?>
+			</div>
 		</td>
 	</tr>
 	<?php if (isset($torneo['comenzado'])) {?>
