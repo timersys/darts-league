@@ -10,8 +10,6 @@ class DartsL_Challonge {
 	 * DartsL_Challonge constructor.
 	 */
 	public function __construct() {
-		require_once (DARTSL_PLUGIN_DIR . 'vendor/autoload.php');
-		require_once (DARTSL_PLUGIN_DIR . 'includes/admin/class-challonge-wrapper.php');
 		$opts = get_option('dartsl_settings');
 		if( !empty($opts['api_key']) ) {
 			$this->challonge = new Challonge_Wrapper( $opts['api_key'] );
