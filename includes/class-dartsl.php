@@ -106,6 +106,9 @@ class DartsL {
 	 */
 	private function load_dependencies() {
 
+		require_once (DARTSL_PLUGIN_DIR . 'vendor/autoload.php');
+		require_once DARTSL_PLUGIN_DIR . 'includes/classes/Challonge.php';
+		require_once (DARTSL_PLUGIN_DIR . 'includes/admin/class-challonge-wrapper.php');
 		require_once DARTSL_PLUGIN_DIR . 'includes/class-dartsl-i18n.php';
 		require_once DARTSL_PLUGIN_DIR . 'includes/global/class-dartsl-cpt.php';
 		require_once DARTSL_PLUGIN_DIR . 'includes/global/class-dartsl-fecha-cpt.php';
