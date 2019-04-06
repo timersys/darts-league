@@ -171,7 +171,7 @@ ORDER By points DESC, dif DESC", get_the_id(),get_the_id(),get_the_id() ));
             (function($){
                 let cos =[];
                 $('.maximo_co').each(function () {
-	                cos.push(parseInt($(this).text()))
+	                cos.push(parseFloat($(this).text()))
                 });
                 const max_co = Math.max.apply(null, cos);
                 $('.maximo_co').each(function () {
@@ -179,7 +179,7 @@ ORDER By points DESC, dif DESC", get_the_id(),get_the_id(),get_the_id() ));
                 });
                 let avgs =[];
                 $('.maximo_avg').each(function () {
-                    avgs.push(parseInt($(this).text()))
+                    avgs.push(parseFloat($(this).text()))
                 });
                 const max_avg = Math.max.apply(null, avgs);
                 $('.maximo_avg').each(function () {

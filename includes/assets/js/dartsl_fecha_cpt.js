@@ -9,9 +9,15 @@
 
 
         const $button = $(this);
-        const $title = $('input[name="post_title"]').text() + $('#post-title-0').val(),
-            $post_id = $('#post_ID').val();
-
+        let $title = '';
+        const    $post_id = $('#post_ID').val();
+       if( $('input[name="post_title"]').length ) {
+           $title = $('input[name="post_title"]').text();
+       } else if( $('#post-title-0').length ) {
+           $title = $('#post-title-0').val();
+       } else {
+           $title = "Fecha del dia";
+       }
         $button.addClass('is-busy').prop('disabled',true);
         if( $title.length < 2 ) {
             alert('Primero añade título a la fecha a disputar');
