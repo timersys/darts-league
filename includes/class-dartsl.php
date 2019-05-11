@@ -114,6 +114,7 @@ class DartsL {
 		require_once DARTSL_PLUGIN_DIR . 'includes/global/class-dartsl-fecha-cpt.php';
 		require_once DARTSL_PLUGIN_DIR . 'includes/admin/class-dartsl-challonge.php';
 		require_once DARTSL_PLUGIN_DIR . 'includes/admin/class-dartsl-admin.php';
+		require_once DARTSL_PLUGIN_DIR . 'includes/utils.php';
 	}
 
 	/**

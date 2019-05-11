@@ -11,6 +11,8 @@ class DartsL_Cpt {
 	public function __construct() {
 		add_action( 'init', [ $this, 'register_cpt' ] );
 		add_filter( 'the_content', [ $this, 'add_torneo_info'] );
+		add_action( 'add_meta_boxes_dartsl_cpt', [ $this, 'add_meta_boxes' ], 99 );
+		add_action( 'wp_ajax_generar_liga', [ $this, 'ajax_generar_liga'] );
 	}
 
 	/**
@@ -22,8 +24,8 @@ class DartsL_Cpt {
 
 		$labels = [
 			'name'               => 'Darts League v' . DARTSL_VERSION,
-			'singular_name'      => _x( 'Torneo', 'post type singular name', 'dartsl' ),
-			'menu_name'          => _x( 'Torneo', 'admin menu', 'dartsl' ),
+			'singular_name'      => _x( 'Torneo/Liga', 'post type singular name', 'dartsl' ),
+			'menu_name'          => _x( 'Torneo/Liga', 'admin menu', 'dartsl' ),
 			'name_admin_bar'     => _x( 'Torneo', 'add new on admin bar', 'dartsl' ),
 			'add_new'            => _x( 'Add New', 'Torneo', 'dartsl' ),
 			'add_new_item'       => __( 'Add New Torneo', 'dartsl' ),
@@ -65,7 +67,73 @@ class DartsL_Cpt {
 		];
 
 		register_post_type( 'dartsl_cpt', $args );
+		// Add new taxonomy, make it hierarchical (like categories)
+		$labels = array(
+			'name'              => _x( 'Tipo', 'taxonomy general name', 'textdomain' ),
+			'singular_name'     => _x( 'Tipo', 'taxonomy singular name', 'textdomain' ),
+			'search_items'      => __( 'Buscar Tipos', 'textdomain' ),
+			'all_items'         => __( 'Todos los tipos', 'textdomain' ),
+			'parent_item'       => __( 'Parent Tipo', 'textdomain' ),
+			'parent_item_colon' => __( 'Parent Tipo:', 'textdomain' ),
+			'edit_item'         => __( 'Edit Tipo', 'textdomain' ),
+			'update_item'       => __( 'Update Tipo', 'textdomain' ),
+			'add_new_item'      => __( 'Add New Tipo', 'textdomain' ),
+			'new_item_name'     => __( 'New Tipo Name', 'textdomain' ),
+			'menu_name'         => __( 'Tipo', 'textdomain' ),
+		);
 
+		$args = array(
+			'hierarchical'      => true,
+			'labels'            => $labels,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'query_var'         => true,
+			'rewrite'           => array( 'slug' => 'tipo' ),
+		);
+
+		register_taxonomy( 'tipo', array( 'dartsl_cpt' ), $args );
+	}
+
+	/**
+	 * Register the metaboxes for our cpt
+	 * @since    1.0.0
+	 * @return   void
+	 */
+	public function add_meta_boxes() {
+		global $wp_meta_boxes;
+
+
+		add_meta_box(
+			'dartsl-participantes',
+			__( 'Opciones', 'dartsl' ),
+			[ $this, 'dartsl_opciones' ],
+			'dartsl_cpt',
+			'normal',
+			'core'
+		);
+
+
+	}
+
+	/**
+	 * Include the metabox view for opts
+	 *
+	 * @param  object $post geotrcpt post object
+	 * @param  array $metabox full metabox items array
+	 *
+	 * @since 1.0.0
+	 */
+	public function dartsl_opciones( $post, $metabox ) {
+
+		$data = get_post_meta($post->ID, 'dartls_fecha', true);
+		$torneo = get_post_meta($post->ID, 'dartls_torneo',true);
+		$data = wp_parse_args( $data,
+			[
+				'participantes' => [],
+				'torneo'    => '',
+			]
+		);
+		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/opciones-torneo.php';
 	}
 
 	/**
@@ -85,8 +153,10 @@ class DartsL_Cpt {
 		$partidos = $wpdb->get_results( "SELECT fecha_id, player1_id, player1_score,player1_co, player1_avg, player2_id, player2_score, player2_co, player2_avg, user1.display_name as player1_name, user2.display_name as player2_name, p.post_title, p.post_name as slug FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id LEFT JOIN $wpdb->posts p ON p.ID = fecha_id WHERE fecha_id IN ('".implode("','",$fechas)."')"   );
 
 		// posiciones fecha
-		$posiciones = $wpdb->get_results( $wpdb->prepare(
-			"SELECT (SELECT SUM(points) as points FROM wp_dartsl_ranks dr WHERE torneo_id = %d AND dr.user_id = userid ) as points,
+		$is_liga = get_post_meta(get_the_id(), 'is_liga', false);
+		if( ! $is_liga ) {
+			$posiciones = $wpdb->get_results( $wpdb->prepare(
+				"SELECT (SELECT SUM(points) as points FROM wp_dartsl_ranks dr WHERE torneo_id = %d AND dr.user_id = userid ) as points,
 jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co,
  (SUM(score) - SUM(lc)) as dif
 FROM
@@ -114,12 +184,44 @@ FROM
 ) t
   WHERE torneo_id = %d
 GROUP BY jugador
-ORDER By points DESC, dif DESC", get_the_id(),get_the_id(),get_the_id(),get_the_id(),get_the_id() ));
-
+ORDER By points DESC, dif DESC", get_the_id(), get_the_id(), get_the_id(), get_the_id(), get_the_id() ) );
+		} else {
+			// posiciones para la liga:
+			$posiciones = $wpdb->get_results( $wpdb->prepare(
+				"SELECT ((SUM(Win) * 3 ) + SUM(Draw)) as points,
+jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co,
+ (SUM(score) - SUM(lc)) as dif
+FROM
+( SELECT  dm.torneo_id, user1.display_name as jugador, player1_id as userid,
+     CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
+     CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END as Loss, 
+     CASE WHEN player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
+     player1_co AS co,
+     player1_avg as darts_avg,
+	 player1_score as score,
+ player2_score as lc
+  FROM {$wpdb->prefix}dartsl_matches dm
+  LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
+  UNION ALL
+  SELECT  dm2.torneo_id, user2.display_name as jugador,  player2_id as userid,
+     CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END as Win, 
+     CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END as Loss, 
+     CASE WHEN player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
+     player2_co AS co,
+     player2_avg as darts_avg,
+ 	player2_score as score,
+  player1_score as lc
+  FROM {$wpdb->prefix}dartsl_matches dm2
+  LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
+) t
+  WHERE torneo_id = %d
+GROUP BY jugador
+ORDER By points DESC, dif DESC", get_the_id() ) );
+		}
 
 		ob_start();
 		?>
-		<h2>Tabla de posiciones del torneo <?php the_title();?></a></h2>
+		<h2>Tabla de posiciones - <?php the_title();?></a></h2>
 		<table id="posiciones">
 			<thead>
 			<tr>
@@ -193,7 +295,82 @@ ORDER By points DESC, dif DESC", get_the_id(),get_the_id(),get_the_id(),get_the_
 
 		return $content . PHP_EOL . $html;
 	}
+	/**
+	 * Ajax handler para generar liga
+	 */
+	public function ajax_generar_liga() {
+		global $wpdb;
+		$post_id = $_POST['post_id'];
 
+		if( empty($post_id) ){
+			die();
+		}
+
+		if( empty($_POST['participantes']) ){
+			echo json_encode(['error' => 'Al menos tiene que haber 3 participantes']);
+			wp_die();
+		}
+
+		$torneo = [
+			'participantes' => filter_input( INPUT_POST, 'participantes', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY )
+		];
+
+		update_post_meta( $post_id, 'dartls_liga', $torneo );
+
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}dartsl_ranks WHERE fecha_id = %d", $post_id ) );
+
+		try {
+			require_once (DARTSL_PLUGIN_DIR . 'includes/classes/Fixture.php');
+
+			$fixture = new Fixture($torneo['participantes']);
+			$fechas = $fixture->getSchedule();
+
+			if( $fechas ) {
+				foreach ($fechas as $i =>  $fecha) {
+					// Create post object
+					$my_post = array(
+						'post_title'    => "Fecha " . ($i + 1) ." - " . get_the_title($post_id),
+						'post_type'  => 'dartsl_fecha_cpt',
+						'post_status'   => 'publish',
+						'post_author'   => 1,
+						'meta_input'    => [ 'is_liga' => true, 'torneo_id' => $post_id ]
+					);
+					$fecha_id = wp_insert_post( $my_post );
+					if( $fecha_id ) {
+						wp_set_object_terms( $fecha_id, get_the_title($post_id), 'fecha_de' );
+						update_post_meta($fecha_id,'is_liga', true);
+						update_post_meta($fecha_id,'torneo_id', $post_id);
+						foreach ( $fecha as $partidos ){
+							// ronda libre no se graba
+							if ( in_array( 'free this round', $partidos ) ) {
+								continue;
+							}
+							$sql = "INSERT INTO {$wpdb->prefix}dartsl_matches (torneo_id, fecha_id, player1_id, player2_id) VALUES (%d, %d, %d, %d)";
+							$wpdb->query( $wpdb->prepare( $sql, (int) $post_id, (int) $fecha_id, $partidos[0], $partidos[1] ) );
+
+						}
+					}
+				}
+			}
+			$torneo['liga_name'] = get_the_title($post_id);
+			$torneo['fechas'] = count($fechas);
+			$torneo['liga'] = sanitize_title(get_the_title($post_id));
+			update_post_meta( $post_id, 'dartls_liga', $torneo );
+			echo json_encode( [ 'success' =>
+				                    [ 'fechas' => count($fechas),
+	                                   'liga_name' => get_the_title($post_id),
+	                                   'liga' => sanitize_title(get_the_title($post_id))
+				                    ]
+			] );
+
+
+			wp_die();
+		}catch (Exception $e) {
+			echo json_encode( [ 'error' => $e->getMessage() ] );
+			wp_die();
+		}
+
+	}
 }
 
 new DartsL_Cpt();

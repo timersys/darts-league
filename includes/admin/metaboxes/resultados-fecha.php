@@ -5,6 +5,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 $partidos = [];
+$is_liga = get_post_meta(get_the_id(), 'is_liga', false);
+
 if( isset($torneo['comenzado']) ) {
 	global $wpdb;
 	// partidos

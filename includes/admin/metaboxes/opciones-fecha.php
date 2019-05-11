@@ -21,6 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<p class="help-text">Selecciona el torneo</p>
 		</td>
 	</tr>
+	<?php
+	$is_liga = get_post_meta(get_the_id(), 'is_liga', false);
+	if ( ! $is_liga) {
+	?>
 	<tr>
 		<th><label>&emsp;&emsp;&emsp;&emsp;<?php _e( 'Participantes', 'dartsl' ); ?></label></th>
 		<td>
@@ -55,7 +59,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</p>
 			</td>
 		</tr>
-
+<?php } ?>
 
 </table>
 <select name="placholder_select" class="dartsl_participantes_placeholder" disabled style="display: none">

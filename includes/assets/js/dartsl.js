@@ -52,6 +52,55 @@
         }, 'json');
     });
     /**
+     * Generar liga
+     */
+    $('.generar_liga').on('click', function (e) {
+        e.preventDefault();
+
+
+        const $button = $(this);
+        let $title = '';
+        const    $post_id = $('#post_ID').val();
+       if( $('input[name="post_title"]').length ) {
+           $title = $('input[name="post_title"]').text();
+       } else if( $('#post-title-0').length ) {
+           $title = $('#post-title-0').val();
+       } else {
+           $title = "Liga";
+       }
+        $button.addClass('is-busy').prop('disabled',true);
+        if( $title.length < 2 ) {
+            alert('Primero añade título a la liga');
+            $button.removeClass('is-busy').prop('disabled',false);
+            return;
+        }
+
+        if( ! $post_id.length ) {
+            alert('Primero guarda la liga antes de continuar');
+            $button.removeClass('is-busy').prop('disabled',false);
+            return;
+        }
+
+        const data = {
+            'action': 'generar_liga',
+            'participantes': $('.dartsl_participantes').val(),
+            'title': $title,
+            'post_id': $post_id
+        };
+
+        // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+        $.post(ajaxurl, data, function(response) {
+            if( response.error ) {
+                alert(response.error);
+            }
+            if( response.success) {
+                $('#generar_llave_success').html(response.success.fechas + ' fechas creadas - <a href="'+ dartsl.liga_url + response.success.liga +'" target="_blank">'+response.success.liga_name+'</a>')
+                $('.comenzar_torneo_p').fadeIn();
+            }
+            $button.removeClass('is-busy').prop('disabled',false);
+        }, 'json');
+    });
+    /**
      * Arranca torneo
      */
     $('.comenzar_torneo').on('click', function (e) {

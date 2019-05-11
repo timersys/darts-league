@@ -73,6 +73,31 @@ class DartsL_Fecha_Cpt {
 		];
 
 		register_post_type( 'dartsl_fecha_cpt', $args );
+		// Add new taxonomy, make it hierarchical (like categories)
+		$labels = array(
+			'name'              => _x( 'Liga/Torneo', 'taxonomy general name', 'textdomain' ),
+			'singular_name'     => _x( 'Liga/Torneo', 'taxonomy singular name', 'textdomain' ),
+			'search_items'      => __( 'Buscar Liga/Torneos', 'textdomain' ),
+			'all_items'         => __( 'Todos los tipos', 'textdomain' ),
+			'parent_item'       => __( 'Parent Liga/Torneo', 'textdomain' ),
+			'parent_item_colon' => __( 'Parent Liga/Torneo:', 'textdomain' ),
+			'edit_item'         => __( 'Edit Liga/Torneo', 'textdomain' ),
+			'update_item'       => __( 'Update Liga/Torneo', 'textdomain' ),
+			'add_new_item'      => __( 'Add New Liga/Torneo', 'textdomain' ),
+			'new_item_name'     => __( 'New Liga/Torneo Name', 'textdomain' ),
+			'menu_name'         => __( 'Liga/Torneo', 'textdomain' ),
+		);
+
+		$args = array(
+			'hierarchical'      => true,
+			'labels'            => $labels,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'query_var'         => true,
+			'rewrite'           => array( 'slug' => 'fecha-de' ),
+		);
+
+		register_taxonomy( 'fecha_de', array( 'dartsl_fecha_cpt' ), $args );
 	}
 
 	/**
@@ -87,10 +112,14 @@ class DartsL_Fecha_Cpt {
 		// Admin scripts
 		if( is_admin() ) {
 			wp_enqueue_script( 'dartsl-selectize' );
-			wp_enqueue_script( 'dartsl-admin', DARTSL_PLUGIN_URL . 'includes/assets/js/dartsl_fecha_cpt.js', [
+			wp_enqueue_script( 'dartsl-admin', DARTSL_PLUGIN_URL . 'includes/assets/js/dartsl.js', [
 				'jquery',
 				'dartsl-selectize'
 			], DARTSL_VERSION, true );
+
+			wp_localize_script( 'dartsl-admin', 'dartsl', [
+				'liga_url' => admin_url('edit.php?post_type=dartsl_fecha_cpt&fecha_de=')
+			]);
 
 			wp_enqueue_style( 'dartsl-selectize' );
 		}
@@ -170,25 +199,36 @@ class DartsL_Fecha_Cpt {
 	public function add_meta_boxes() {
 		global $wp_meta_boxes;
 
+		$is_liga = get_post_meta(get_the_id(), 'is_liga', false);
 
-		add_meta_box(
-			'dartsl-participantes',
-			__( 'Opciones', 'dartsl' ),
-			[ $this, 'dartsl_opciones' ],
-			'dartsl_fecha_cpt',
-			'normal',
-			'core'
-		);
+			add_meta_box(
+				'dartsl-participantes',
+				__( 'Opciones', 'dartsl' ),
+				[ $this, 'dartsl_opciones' ],
+				'dartsl_fecha_cpt',
+				'normal',
+				'core'
+			);
+		if( ! $is_liga ) {
+			add_meta_box(
+				'dartsl-resultados',
+				__( 'Resultados', 'dartsl' ),
+				[ $this, 'dartsl_resultados' ],
+				'dartsl_fecha_cpt',
+				'normal',
+				'core'
+			);
+		} else {
 
-		add_meta_box(
-			'dartsl-resultados',
-			__( 'Resultados', 'dartsl' ),
-			[ $this, 'dartsl_resultados' ],
-			'dartsl_fecha_cpt',
-			'normal',
-			'core'
-		);
-
+			add_meta_box(
+				'dartsl-resultados',
+				__( 'Partidos liga', 'dartsl' ),
+				[ $this, 'dartsl_resultados_liga' ],
+				'dartsl_fecha_cpt',
+				'normal',
+				'core'
+			);
+		}
 	}
 
 
@@ -216,6 +256,10 @@ class DartsL_Fecha_Cpt {
 	public function dartsl_resultados( $post, $metabox ) {
 		$torneo = get_post_meta($post->ID, 'dartls_torneo',true);
 		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/resultados-fecha.php';
+	}
+	public function dartsl_resultados_liga( $post, $metabox ) {
+		$torneo = get_post_meta($post->ID, 'dartls_torneo',true);
+		include DARTSL_PLUGIN_DIR . '/includes/admin/metaboxes/resultados-fecha-liga.php';
 	}
 
 
