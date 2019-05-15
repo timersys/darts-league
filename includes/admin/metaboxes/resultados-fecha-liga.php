@@ -23,8 +23,8 @@ $partidos = $wpdb->get_results( $wpdb->prepare( "SELECT *, user1.display_name as
 						$partido = (array) $partido;
 
 						echo '<tr><td>Ganador <select name="winner[]">
-								<option value="'. $partido['player1_id'].'" '.selected($partido['winner'], $partido['player1_id']).'>' . $partido['player1_name'] . '</option>
-								<option value="'. $partido['player2_id'].'" '.selected($partido['winner'], $partido['player2_id']).'>' . $partido['player2_name'] . '</option>'.
+								<option value="'. $partido['player1_id'].'" '.selected($partido['winner'], $partido['player1_id'], false).'>' . $partido['player1_name'] . '</option>
+								<option value="'. $partido['player2_id'].'" '.selected($partido['winner'], $partido['player2_id'], false).'>' . $partido['player2_name'] . '</option>'.
 						     '</select></td></tr>';
 						echo '<tr>' .
 						     '<td class="left_match">' .

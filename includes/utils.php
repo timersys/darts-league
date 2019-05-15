@@ -22,7 +22,7 @@ if( isset($_GET['import_liga']) ) {
 		foreach ($fechas as $i => $f) {
 			// Create post object
 			$my_post = array(
-				'post_title'    => "Fecha " . ($i + 1) ." - " . get_the_title($torneo_id),
+				'post_title'    => "Fecha " . ($i) ." - " . get_the_title($torneo_id),
 				'post_type'  => 'dartsl_fecha_cpt',
 				'post_status'   => 'publish',
 				'post_author'   => 1,

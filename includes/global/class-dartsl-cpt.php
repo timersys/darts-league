@@ -188,14 +188,14 @@ ORDER By points DESC, dif DESC", get_the_id(), get_the_id(), get_the_id(), get_t
 		} else {
 			// posiciones para la liga:
 			$posiciones = $wpdb->get_results( $wpdb->prepare(
-				"SELECT ((SUM(Win) * 3 ) + SUM(Draw)) as points,
+				"SELECT ((SUM(Win) * 3 ) + SUM(Draw)) as points, ( SUM(Win) + SUM(Draw) + SUM(Loss)) as jugados,
 jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co,
  (SUM(score) - SUM(lc)) as dif
 FROM
 ( SELECT  dm.torneo_id, user1.display_name as jugador, player1_id as userid,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
      CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END as Loss, 
-     CASE WHEN player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
+     CASE WHEN player1_score != 0 AND player1_score = player2_score THEN 1 ELSE 0 END as Draw, 
      player1_co AS co,
      player1_avg as darts_avg,
 	 player1_score as score,
@@ -206,7 +206,7 @@ FROM
   SELECT  dm2.torneo_id, user2.display_name as jugador,  player2_id as userid,
      CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END as Win, 
      CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END as Loss, 
-     CASE WHEN player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
+     CASE WHEN player2_score != 0 AND player2_score = player1_score THEN 1 ELSE 0 END as Draw, 
      player2_co AS co,
      player2_avg as darts_avg,
  	player2_score as score,
@@ -225,7 +225,11 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 		<table id="posiciones">
 			<thead>
 			<tr>
-				<th>Nombre</th><th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>Dif.</th><th>CO</th><th>AVG</th><th>Pts</th>
+				<th>Nombre</th>
+				<?php if( $is_liga ) : ?>
+					<th>J</th>
+				<?php endif;?>
+				<th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>Dif.</th><th>CO</th><th>AVG</th><th>Pts</th>
 			</tr>
 			</thead>
 			<?php
@@ -233,7 +237,11 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 			$puestos = $opts['puestos'];
 			if( !empty($posiciones) ) {
 				foreach ($posiciones as $i => $pos) {
-					echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$pos->points.'</td></tr>';
+					echo '<tr><td>'.$pos->jugador.'</td>';
+					if( $is_liga ) :
+						echo '<td>'.$pos->jugados.'</td>';
+					endif;
+					echo '<td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$pos->points.'</td></tr>';
 				}
 			}
 			?>
