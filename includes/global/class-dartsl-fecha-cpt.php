@@ -339,7 +339,7 @@ class DartsL_Fecha_Cpt {
 		$partidos = $wpdb->get_results( $wpdb->prepare("SELECT *, user1.display_name as player1_name, user2.display_name as player2_name FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id WHERE fecha_id = %d", get_the_id() ) );
 		// posiciones fecha
 		$posiciones = $wpdb->get_results( $wpdb->prepare(
-			"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif
+			"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif
 FROM
 ( SELECT  dm.fecha_id, user1.display_name as jugador, rank, points,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 

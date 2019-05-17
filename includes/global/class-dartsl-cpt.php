@@ -157,7 +157,7 @@ class DartsL_Cpt {
 		if( ! $is_liga ) {
 			$posiciones = $wpdb->get_results( $wpdb->prepare(
 				"SELECT (SELECT SUM(points) as points FROM wp_dartsl_ranks dr WHERE torneo_id = %d AND dr.user_id = userid ) as points,
-jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co,
+jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co,
  (SUM(score) - SUM(lc)) as dif
 FROM
 ( SELECT  dm.torneo_id, user1.display_name as jugador, player1_id as userid,
@@ -189,7 +189,7 @@ ORDER By points DESC, dif DESC", get_the_id(), get_the_id(), get_the_id(), get_t
 			// posiciones para la liga:
 			$posiciones = $wpdb->get_results( $wpdb->prepare(
 				"SELECT ((SUM(Win) * 3 ) + SUM(Draw)) as points, ( SUM(Win) + SUM(Draw) + SUM(Loss)) as jugados,
-jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co,
+jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co,
  (SUM(score) - SUM(lc)) as dif
 FROM
 ( SELECT  dm.torneo_id, user1.display_name as jugador, player1_id as userid,
