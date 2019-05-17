@@ -13,7 +13,7 @@ if( isset($torneo['comenzado']) ) {
 	$partidos = $wpdb->get_results( $wpdb->prepare( "SELECT *, user1.display_name as player1_name, user2.display_name as player2_name FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id WHERE fecha_id = %d", get_the_id() ) );
 	// posiciones fecha
 	$posiciones = $wpdb->get_results( $wpdb->prepare(
-		"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif
+		"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(darts_avg) as avg, MAX(co) as co, SUM(score) - SUM(lc) as dif, SUM(d180) as d180
 FROM
 ( SELECT  dm.fecha_id, user1.display_name as jugador, rank, points,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
@@ -22,6 +22,7 @@ FROM
      player1_co AS co,
      player1_avg as darts_avg,
 	 player1_score as score,
+	 player1_180 as d180,
  player2_score as lc
   FROM {$wpdb->prefix}dartsl_matches dm
   LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
@@ -34,6 +35,7 @@ FROM
      player2_co AS co,
      player2_avg as darts_avg,
  	player2_score as score,
+  player2_180 as d180,
   player1_score as lc
   FROM {$wpdb->prefix}dartsl_matches dm
   LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
@@ -75,6 +77,7 @@ ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 						     '<div class="match_name"><span>' . $partido['player1_name'] . '</span> <input type="hidden" name="player1_id[]" value="'. $partido['player1_id'].'"></div>' .
 						     '<div class="match_avg">Avg <input type="number" step="0.01" name="player1_avg[]" value="' . $partido['player1_avg'] . '"></div>' .
 						     '<div class="match_co">CO <input type="number" step="0.01" name="player1_co[]" value="' . $partido['player1_co'] . '"></div>' .
+						     '<div class="match_180">180 <input type="number" step="1" name="player1_180[]" value="' . $partido['player1_180'] . '"></div>' .
 						     '</td>' .
 						     '<td><input type="text" class="player_score" name="player1_score[]" value="'. $partido['player1_score'].'" disabled><input type="hidden" name="player1_score[]" value="'. $partido['player1_score'].'"></td>' .
 						     '<td><input type="text" class="player_score" name="player2_score[]" value="'. $partido['player2_score'].'" disabled><input type="hidden" name="player2_score[]" value="'. $partido['player2_score'].'"></td>' .
@@ -82,6 +85,7 @@ ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 						     '<div class="match_name"><span>' . $partido['player2_name'] . '</span> <input type="hidden" name="player2_id[]" value="'. $partido['player2_id'].'"></div>' .
 						     '<div class="match_avg"><input type="number" step="0.01" name="player2_avg[]" value="' . $partido['player2_avg'] . '"> Avg</div>' .
 						     '<div class="match_co"><input type="number" step="0.01" name="player2_co[]" value="' . $partido['player2_co'] . '"> CO</div>' .
+						     '<div class="match_180"><input type="number" step="1" name="player2_180[]" value="' . $partido['player2_180'] . '"> 180</div>' .
 						     '</td>' .
 						     '</tr>';
 					}
@@ -115,7 +119,7 @@ ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 				$opts = get_option('dartsl_settings');
 				if( !empty($posiciones) ) {
 					foreach ($posiciones as $i => $pos) {
-						echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td>'.$pos->co.'</td><td>'.number_format($pos->avg,2).'</td><td>'.$pos->points.'</td></tr>';
+						echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td>'.$pos->co.'</td><td>'.number_format($pos->avg,2).'</td><td>'.$pos->d180.'</td><td>'.$pos->points.'</td></tr>';
 					}
 				}
 			?>

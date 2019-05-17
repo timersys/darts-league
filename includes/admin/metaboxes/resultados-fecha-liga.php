@@ -31,6 +31,7 @@ $partidos = $wpdb->get_results( $wpdb->prepare( "SELECT *, user1.display_name as
 						     '<div class="match_name"><span>' . $partido['player1_name'] . '</span> <input type="hidden" name="player1_id[]" value="'. $partido['player1_id'].'"></div>' .
 						     '<div class="match_avg">Avg <input type="number" step="0.01" name="player1_avg[]" value="' . $partido['player1_avg'] . '"></div>' .
 						     '<div class="match_co">CO <input type="number" step="0.01" name="player1_co[]" value="' . $partido['player1_co'] . '"></div>' .
+						     '<div class="match_180">180 <input type="number" step="1" name="player1_180[]" value="' . $partido['player1_180'] . '"></div>' .
 						     '</td>' .
 						     '<td><input type="text" class="player_score" name="player1_score[]" value="'. $partido['player1_score'].'"></td>' .
 						     '<td><input type="text" class="player_score" name="player2_score[]" value="'. $partido['player2_score'].'"></td>' .
@@ -38,6 +39,7 @@ $partidos = $wpdb->get_results( $wpdb->prepare( "SELECT *, user1.display_name as
 						     '<div class="match_name"><span>' . $partido['player2_name'] . '</span> <input type="hidden" name="player2_id[]" value="'. $partido['player2_id'].'"></div>' .
 						     '<div class="match_avg"><input type="number" step="0.01" name="player2_avg[]" value="' . $partido['player2_avg'] . '"> Avg</div>' .
 						     '<div class="match_co"><input type="number" step="0.01" name="player2_co[]" value="' . $partido['player2_co'] . '"> CO</div>' .
+						     '<div class="match_180"><input type="number" step="1" name="player2_180[]" value="' . $partido['player2_180'] . '"> 180</div>' .
 						     '</td>' .
 						     '</tr>';
 					}

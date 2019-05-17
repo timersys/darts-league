@@ -14,7 +14,7 @@ $liga = get_post_meta(get_the_id(),'dartls_liga', ['participantes'=>[]]);
 				<?php
 					$users = get_users();
 					 foreach ( $users as $user ) : ?>
-						<option value="<?php echo $user->ID; ?>" <?php selected(true, in_array( $user->ID, $liga['participantes'])); ?>> <?php echo $user->display_name; ?></option>
+						<option value="<?php echo $user->ID; ?>" <?php isset($liga['participantes']) ? selected(true, in_array( $user->ID, $liga['participantes'])) : ''; ?>> <?php echo $user->display_name; ?></option>
 					<?php endforeach; ?>
 			</select>
 			<?php if( !empty($liga['liga']) ) :?>

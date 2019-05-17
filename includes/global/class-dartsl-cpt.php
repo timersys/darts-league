@@ -150,7 +150,7 @@ class DartsL_Cpt {
 
 		// partidos
 		$fechas = $wpdb->get_col( $wpdb->prepare("SELECT ID FROM {$wpdb->prefix}posts p LEFT JOIN $wpdb->postmeta pm ON p.ID = pm.post_id  WHERE meta_key = 'torneo_id' AND meta_value = %d", get_the_id() ) );
-		$partidos = $wpdb->get_results( "SELECT fecha_id, player1_id, player1_score,player1_co, player1_avg, player2_id, player2_score, player2_co, player2_avg, user1.display_name as player1_name, user2.display_name as player2_name, p.post_title, p.post_name as slug FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id LEFT JOIN $wpdb->posts p ON p.ID = fecha_id WHERE fecha_id IN ('".implode("','",$fechas)."') ORDER BY fecha_id"   );
+		$partidos = $wpdb->get_results( "SELECT fecha_id, player1_id, player1_score,player1_co,player1_180, player1_avg, player2_id, player2_score, player2_co, player2_180, player2_avg, user1.display_name as player1_name, user2.display_name as player2_name, p.post_title, p.post_name as slug FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id LEFT JOIN $wpdb->posts p ON p.ID = fecha_id WHERE fecha_id IN ('".implode("','",$fechas)."') ORDER BY fecha_id"   );
 
 		// posiciones fecha
 		$is_liga = get_post_meta(get_the_id(), 'is_liga', false);
@@ -158,7 +158,7 @@ class DartsL_Cpt {
 			$posiciones = $wpdb->get_results( $wpdb->prepare(
 				"SELECT (SELECT SUM(points) as points FROM wp_dartsl_ranks dr WHERE torneo_id = %d AND dr.user_id = userid ) as points,
 jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co,
- (SUM(score) - SUM(lc)) as dif
+ (SUM(score) - SUM(lc)) as dif, d180
 FROM
 ( SELECT  dm.torneo_id, user1.display_name as jugador, player1_id as userid,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
@@ -167,6 +167,7 @@ FROM
      player1_co AS co,
      player1_avg as darts_avg,
 	 player1_score as score,
+	 player1_180 as d180,
  player2_score as lc
   FROM {$wpdb->prefix}dartsl_matches dm
   LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
@@ -178,6 +179,7 @@ FROM
      player2_co AS co,
      player2_avg as darts_avg,
  	player2_score as score,
+ 	player2_180 as d180,
   player1_score as lc
   FROM {$wpdb->prefix}dartsl_matches dm2
   LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
@@ -190,7 +192,7 @@ ORDER By points DESC, dif DESC", get_the_id(), get_the_id(), get_the_id(), get_t
 			$posiciones = $wpdb->get_results( $wpdb->prepare(
 				"SELECT ((SUM(Win) * 3 ) + SUM(Draw)) as points, ( SUM(Win) + SUM(Draw) + SUM(Loss)) as jugados,
 jugador, userid, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co,
- (SUM(score) - SUM(lc)) as dif
+ (SUM(score) - SUM(lc)) as dif, SUM(d180) as d180
 FROM
 ( SELECT  dm.torneo_id, user1.display_name as jugador, player1_id as userid,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
@@ -199,6 +201,7 @@ FROM
      player1_co AS co,
      player1_avg as darts_avg,
 	 player1_score as score,
+	 player1_180 as d180,
  player2_score as lc
   FROM {$wpdb->prefix}dartsl_matches dm
   LEFT JOIN {$wpdb->prefix}users user1 ON user1.ID = player1_id
@@ -210,6 +213,7 @@ FROM
      player2_co AS co,
      player2_avg as darts_avg,
  	player2_score as score,
+ 	player2_180 as d180,
   player1_score as lc
   FROM {$wpdb->prefix}dartsl_matches dm2
   LEFT JOIN {$wpdb->prefix}users user2 ON user2.ID = player2_id
@@ -229,7 +233,7 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 				<?php if( $is_liga ) : ?>
 					<th>J</th>
 				<?php endif;?>
-				<th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>Dif.</th><th>CO</th><th>AVG</th><th>Pts</th>
+				<th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>Dif.</th><th>CO</th><th>AVG</th><th>180</th><th>Pts</th>
 			</tr>
 			</thead>
 			<?php
@@ -241,7 +245,7 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 					if( $is_liga ) :
 						echo '<td>'.$pos->jugados.'</td>';
 					endif;
-					echo '<td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td>'.$pos->points.'</td></tr>';
+					echo '<td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td class="maximo_180">'.$pos->d180.'</td><td>'.$pos->points.'</td></tr>';
 				}
 			}
 			?>
@@ -261,6 +265,7 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 					     '<div class="match_name"><span>' . $partido['player1_name'] . '</span></div>' .
 					     '<div class="match_avg">Avg: '.$partido['player1_avg'] . '</div>' .
 					     '<div class="match_co">CO: ' . $partido['player1_co'] . '</div>' .
+					     '<div class="match_180">180: ' . $partido['player1_180'] . '</div>' .
 					     '</td>' .
 					     '<td><div class="score">'. $partido['player1_score'].'</div></td>' .
 					     '<td><div class="score">'. $partido['player2_score'].'</div></td>' .
@@ -268,6 +273,7 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 					     '<div class="match_name"><span>' . $partido['player2_name'] . '</span> </div>' .
 					     '<div class="match_avg">' . $partido['player2_avg'] . ' Avg</div>' .
 					     '<div class="match_co">' . $partido['player2_co'] . ' CO</div>' .
+					     '<div class="match_180">' . $partido['player2_180'] . ' 180</div>' .
 					     '</td>' .
 					     '</tr>';
 
@@ -294,7 +300,14 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
                 $('.maximo_avg').each(function () {
                     $(this).toggleClass('max', +$(this).text() === max_avg)
                 });
-
+                let d180 = [];
+                $('.maximo_180').each(function () {
+                    d180.push(parseFloat($(this).text()))
+                });
+                const max_180 = Math.max.apply(null, d180);
+                $('.maximo_180').each(function () {
+                    $(this).toggleClass('max', +$(this).text() === max_180)
+                });
 
             })(jQuery)
 		</script>
@@ -346,7 +359,7 @@ ORDER By points DESC, dif DESC", get_the_id() ) );
 					$fecha_id = wp_insert_post( $my_post );
 					if( $fecha_id ) {
 						wp_set_object_terms( $fecha_id, get_the_title($post_id), 'fecha_de' );
-						update_post_meta($fecha_id,'is_liga', true);
+						update_post_meta($post_id,'is_liga', true);
 						update_post_meta($fecha_id,'torneo_id', $post_id);
 						foreach ( $fecha as $partidos ){
 							// ronda libre no se graba

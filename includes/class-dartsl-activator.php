@@ -73,13 +73,19 @@ class DartsL_Activator {
 				dbDelta( $fechas_table  );
 			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$ranks_table_name}'" ) != $ranks_table_name )
 				dbDelta(  $ranking_table );
+			if( ! get_option('dartsl_v') ) {
+				$fechas_table_update = "ALTER TABLE `{$wpdb->base_prefix}dartsl_matches` ADD COLUMN player1_180 INT(6) DEFAULT 0 ,ADD COLUMN player2_180 INT(6) DEFAULT 0;";
+				$wpdb->query(  $fechas_table_update );
+
+			}
+
 		}catch (Exception $e){
-			echo '<pre>';
-			var_dump($e->getMessage());
-			echo '</pre>';
-			die();
+			error_log($e->getMessage());
 		}
 
+
+
+		update_option('dartsl_v',DARTSL_VERSION);
 		do_action('dartsl_activated');
 	}
 
