@@ -150,7 +150,7 @@ class DartsL_Cpt {
 
 		// partidos
 		$fechas = $wpdb->get_col( $wpdb->prepare("SELECT ID FROM {$wpdb->prefix}posts p LEFT JOIN $wpdb->postmeta pm ON p.ID = pm.post_id  WHERE meta_key = 'torneo_id' AND meta_value = %d", get_the_id() ) );
-		$partidos = $wpdb->get_results( "SELECT fecha_id, player1_id, player1_score,player1_co, player1_avg, player2_id, player2_score, player2_co, player2_avg, user1.display_name as player1_name, user2.display_name as player2_name, p.post_title, p.post_name as slug FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id LEFT JOIN $wpdb->posts p ON p.ID = fecha_id WHERE fecha_id IN ('".implode("','",$fechas)."')"   );
+		$partidos = $wpdb->get_results( "SELECT fecha_id, player1_id, player1_score,player1_co, player1_avg, player2_id, player2_score, player2_co, player2_avg, user1.display_name as player1_name, user2.display_name as player2_name, p.post_title, p.post_name as slug FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id LEFT JOIN $wpdb->posts p ON p.ID = fecha_id WHERE fecha_id IN ('".implode("','",$fechas)."') ORDER BY fecha_id"   );
 
 		// posiciones fecha
 		$is_liga = get_post_meta(get_the_id(), 'is_liga', false);

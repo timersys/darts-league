@@ -302,7 +302,11 @@ class DartsL_Fecha_Cpt {
 			// delete previous matches and insert again
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}dartsl_matches WHERE fecha_id = %d", $post_id ) );
 			foreach ( $_POST['winner'] as $match_index => $winner ){
-				$winner_id = $winner == 'player1' ?  $_POST['player1_id'][$match_index] :  $_POST['player2_id'][$match_index];
+				if( $winner == 'player1' || $winner == 'player2') {
+					$winner_id = $winner == 'player1' ?  $_POST['player1_id'][$match_index] :  $_POST['player2_id'][$match_index];
+				} else {
+					$winner_id = $winner;
+				}
 				$sql = "INSERT INTO {$wpdb->prefix}dartsl_matches (torneo_id, fecha_id, winner, player1_id, player1_score, player1_avg, player1_co, player2_id, player2_score, player2_avg, player2_co) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)";
 				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $winner_id, $_POST['player1_id'][$match_index], $_POST['player1_score'][$match_index], $_POST['player1_avg'][$match_index], $_POST['player1_co'][$match_index], $_POST['player2_id'][$match_index], $_POST['player2_score'][$match_index], $_POST['player2_avg'][$match_index], $_POST['player2_co'][$match_index] ) );
 
