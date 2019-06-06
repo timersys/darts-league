@@ -307,7 +307,7 @@ class DartsL_Fecha_Cpt {
 				} else {
 					$winner_id = $winner;
 				}
-				$sql = "INSERT INTO {$wpdb->prefix}dartsl_matches (torneo_id, fecha_id, winner, player1_id, player1_score, player1_avg, player1_co, player1_180, player2_id, player2_score, player2_avg, player2_co, player2_180) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)";
+				$sql = "INSERT INTO {$wpdb->prefix}dartsl_matches (torneo_id, fecha_id, winner, player1_id, player1_score, player1_avg, player1_co, player1_180, player2_id, player2_score, player2_avg, player2_co, player2_180) VALUES (%d, %d, %d, %d, %d, %f, %d, %d, %d, %d, %f, %d, %d)";
 				$wpdb->query( $wpdb->prepare( $sql, (int) $_POST['dartsl']['torneo'], (int) $post_id, (int) $winner_id, $_POST['player1_id'][$match_index], (int) $_POST['player1_score'][$match_index], (float) $_POST['player1_avg'][$match_index], (int)$_POST['player1_co'][$match_index], (int)$_POST['player1_180'][$match_index], (int) $_POST['player2_id'][$match_index], (int)$_POST['player2_score'][$match_index],(float) $_POST['player2_avg'][$match_index], (int)$_POST['player2_co'][$match_index], (int)$_POST['player2_180'][$match_index] ) );
 
 			}
@@ -339,9 +339,13 @@ class DartsL_Fecha_Cpt {
 
 		// partidos
 		$partidos = $wpdb->get_results( $wpdb->prepare("SELECT *, user1.display_name as player1_name, user2.display_name as player2_name FROM {$wpdb->prefix}dartsl_matches LEFT JOIN $wpdb->users user1 ON user1.ID = player1_id LEFT JOIN $wpdb->users user2 ON user2.ID = player2_id WHERE fecha_id = %d", get_the_id() ) );
-		// posiciones fecha
-		$posiciones = $wpdb->get_results( $wpdb->prepare(
-			"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co, SUM(d180) as d180, SUM(score) - SUM(lc) as dif
+		$is_liga = get_post_meta(get_the_id(), 'is_liga', false);
+
+		ob_start();
+		if( ! $is_liga ) {
+			// posiciones fecha
+			$posiciones = $wpdb->get_results( $wpdb->prepare(
+				"SELECT points, rank, jugador, SUM(Win) As ganados, SUM(Loss) as perdidos, SUM(Draw) as empatados, SUM(score) as lf, SUM(lc) as lc, AVG(NULLIF(darts_avg ,0)) as avg, MAX(co) as co, SUM(d180) as d180, SUM(score) - SUM(lc) as dif
 FROM
 ( SELECT  dm.fecha_id, user1.display_name as jugador, rank, points,
      CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END as Win, 
@@ -371,28 +375,42 @@ FROM
 ) t
   WHERE fecha_id = %d 
 GROUP BY jugador
-ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
+ORDER By rank, dif DESC", get_the_id(), get_the_id(), get_the_id() ) );
 
 
-		ob_start();
-		?>
-		<!--suppress ALL -->
-		<h2>Puntos obtenidos en la fecha <?php the_title();?> del torneo <a href="<?= get_permalink($partidos[0]->torneo_id);?>" target="_blank"><?php echo get_the_title($partidos[0]->torneo_id);?></a></h2>
-		<table id="posiciones">
-			<thead>
-				<tr>
-					<th>Nombre</th><th>G</th><th>E</th><th>P</th><th>LF</th><th>LC</th><th>Dif.</th><th>CO</th><th>AVG</th><th>180</th><th>Pts</th>
-				</tr>
-			</thead>
-			<?php
-
-			if( !empty($posiciones) ) {
-				foreach ($posiciones as $i => $pos) {
-					echo '<tr><td>'.$pos->jugador.'</td><td>'.$pos->ganados.'</td><td>'.$pos->empatados.'</td><td>'.$pos->perdidos.'</td><td>'.$pos->lf.'</td><td>'.$pos->lc.'</td><td>'.$pos->dif.'</td><td class="maximo_co">'.$pos->co.'</td><td class="maximo_avg">'.number_format($pos->avg,2).'</td><td class="maximo_180">'.$pos->d180.'</td><td>'.$pos->points.'</td></tr>';
-				}
-			}
 			?>
-		</table>
+			<!--suppress ALL -->
+			<h2>Puntos obtenidos en la fecha <?php the_title(); ?> del torneo <a
+						href="<?= get_permalink( $partidos[0]->torneo_id ); ?>"
+						target="_blank"><?php echo get_the_title( $partidos[0]->torneo_id ); ?></a></h2>
+			<table id="posiciones">
+				<thead>
+				<tr>
+					<th>Nombre</th>
+					<th>G</th>
+					<th>E</th>
+					<th>P</th>
+					<th>LF</th>
+					<th>LC</th>
+					<th>Dif.</th>
+					<th>CO</th>
+					<th>AVG</th>
+					<th>180</th>
+					<th>Pts</th>
+				</tr>
+				</thead>
+				<?php
+
+				if ( ! empty( $posiciones ) ) {
+					foreach ( $posiciones as $i => $pos ) {
+						echo '<tr><td>' . $pos->jugador . '</td><td>' . $pos->ganados . '</td><td>' . $pos->empatados . '</td><td>' . $pos->perdidos . '</td><td>' . $pos->lf . '</td><td>' . $pos->lc . '</td><td>' . $pos->dif . '</td><td class="maximo_co">' . $pos->co . '</td><td class="maximo_avg">' . number_format( $pos->avg, 2 ) . '</td><td class="maximo_180">' . $pos->d180 . '</td><td>' . $pos->points . '</td></tr>';
+					}
+				}
+				?>
+			</table>
+			<?php
+		}
+			?>
 		<h2>Partidos jugados</h2>
 		<table id="partidos">
 			<?php
@@ -404,16 +422,16 @@ ORDER By rank, dif DESC", get_the_id(),get_the_id(),get_the_id()));
 					     '<td class="left_match">' .
 					     '<div class="match_name"><span>' . $partido['player1_name'] . '</span></div>' .
 					     '<div class="match_avg">Avg: '.$partido['player1_avg'] . '</div>' .
-					     '<div class="match_co">CO: ' . $partido['player1_co'] . '</div>' .
-					     '<div class="match_co">CO: ' . $partido['player1_180'] . '</div>' .
+					     '<div class="match_co">CO(max): ' . $partido['player1_co'] . '</div>' .
+					     '<div class="match_co">180: ' . $partido['player1_180'] . '</div>' .
 					     '</td>' .
 					     '<td><div class="score">'. $partido['player1_score'].'</div></td>' .
 					     '<td><div class="score">'. $partido['player2_score'].'</div></td>' .
 					     '<td class="right_match">' .
 					     '<div class="match_name"><span>' . $partido['player2_name'] . '</span> </div>' .
-					     '<div class="match_avg">' . $partido['player2_avg'] . ' Avg</div>' .
-					     '<div class="match_co">' . $partido['player2_co'] . ' CO</div>' .
-					     '<div class="match_co">' . $partido['player2_180'] . ' CO</div>' .
+					     '<div class="match_avg">' . $partido['player2_avg'] . ' :Avg</div>' .
+					     '<div class="match_co">' . $partido['player2_co'] . ' :CO(max)</div>' .
+					     '<div class="match_co">' . $partido['player2_180'] . ' :180</div>' .
 					     '</td>' .
 					     '</tr>';
 				}
